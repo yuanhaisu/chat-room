@@ -1,0 +1,18 @@
+redis:
+  host: dev.spacej.tech
+  port: 6379
+  passwd: spacej.tech
+rabbit:
+  protocol: amqp
+  username: guest
+  password: guest
+  ip: 114.115.222.149
+  port: 5672
+  queue_name: chat_msg
+  chat_msg_queue_name: chat_room
+recv_grpc:
+  port: 50051
+  ip: localhost
+send_grpc:
+  port: 50052
+  ip: localhost
