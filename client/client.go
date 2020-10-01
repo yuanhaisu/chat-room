@@ -222,7 +222,7 @@ func (gc *grpcCommunicator) Send(req *proto.Request) {
 }
 
 func NewMsgRequest(input string, isJoin ...bool) (req *proto.Request, err error) {
-
+	//TODO::使用消息id和ack来处理消息发送失败流程
 	req = &proto.Request{
 		From: UserName,
 		Time: time.Now().Format("2006-01-02 15:04:05"),

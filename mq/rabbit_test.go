@@ -3,6 +3,7 @@ package mq
 import (
 	"fmt"
 	"github.com/spf13/viper"
+	"testing"
 )
 
 var Msq MsgSendQueue
@@ -21,5 +22,27 @@ func init(){
 	if err!=nil{
 		panic(err)
 	}
+}
+
+func TestNewMsgQueue(t *testing.T) {
+
+}
+
+func TestRabbitMq_Publish(t *testing.T) {
+	if e:=Msq.Publish([]byte("ss"));e!=nil{
+		t.Errorf("got [%s] expect [%s]",e,nil)
+	}
+}
+
+func BenchmarkRabbitMq_Publish(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		if e:=Msq.Publish([]byte("benchmar"));e!=nil{
+			b.Fatal("publish failed！ reason is ",e)
+		}
+	}
+}
+
+func TestRabbitMq_QueuedMsg(t *testing.T) {
+	
 }
 
