@@ -62,7 +62,7 @@ func (mc *msgCenter) Delivery(ctx context.Context) {
 				glog.Error("重连消费者")
 				return
 			}
-			glog.Infoln("收到消息队列内容：", string(msg.Body))
+			//glog.Infoln("收到消息队列内容：", string(msg.Body))
 			req := &proto.Request{}
 
 			if e := json.Unmarshal(msg.Body, req); e != nil {
@@ -89,7 +89,7 @@ func (mc *msgCenter) Delivery(ctx context.Context) {
 			mc.onlineMsgChan.Range(func(key, value interface{}) bool {
 				c, _ := mc.onlineMsgChan.Load(key)
 				c.(chan *proto.Request) <- req
-				glog.Infoln("写入消息到发送通道")
+				//glog.Infoln("写入消息到发送通道")
 				return true
 			})
 			//用户下线，收到关闭指定通道的通知

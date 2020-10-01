@@ -6,8 +6,6 @@ import (
 	"chat_room/proto"
 	"chat_room/redis"
 	"encoding/json"
-	"fmt"
-	"io"
 	"time"
 )
 
@@ -41,10 +39,10 @@ func (s *Server) UserSendStream(req *proto.Request, usStream proto.Send_UserSend
 	for {
 		select {
 		case req := <-ch:
-			glog.Infof("从发送通道读取到消息：%+v", req)
-			s.doSend(usStream, req)
+			//glog.Infof("从发送通道读取到消息：%+v", req)
+			doSend(s.redis,usStream, req)
 		case <-usStream.Context().Done():
-			fmt.Println("收到" + req.From + "正常下线")
+			//fmt.Println("收到" + req.From + "正常下线")
 			req.Action = common.Quit
 			req.Time = time.Now().Format("2006-01-02 15:04:05")
 			req.Content = req.From + "正常下线"
@@ -76,21 +74,17 @@ func (s *Server) SendUnreadMsg(usStream proto.Send_UserSendStreamServer, name st
 	}
 }
 
-func (s *Server) doSend(usStream proto.Send_UserSendStreamServer, req *proto.Request) {
+func doSend(redisConn redis.Redis,usStream proto.Send_UserSendStreamServer, req *proto.Request) {
 	if e := usStream.Send(req); e != nil {
 		if req.Action == common.Aite {
 			b, _ := json.Marshal(req)
-			if _, e := s.redis.Do("LPUSH", req.From, b); e != nil {
+			if _, e := redisConn.Do("LPUSH", req.From, b); e != nil {
 				glog.Error("存储离线消息失败，失败信息:", e)
 				return
 			}
 		}
-		if e == io.EOF {
-			glog.Error("补货用户")
-			return
-		}
 		glog.Errorf("发送消息给用户失败，失败信息：%v", e, "，消息内容：%+v", req)
 		return
 	}
-	glog.Infoln("完成消息发送给用户")
+	//glog.Infoln("完成消息发送给用户")
 }

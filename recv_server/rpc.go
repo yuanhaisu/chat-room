@@ -37,6 +37,7 @@ func (s *Server) UserRecvStream(urStream proto.Recv_UserRecvStreamServer) error 
 			b, _ := json.Marshal(data)
 			if e := s.Mq.Publish(b); e != nil {
 				glog.Error("发布消息失败，失败信息：")
+
 			}
 		}
 	}

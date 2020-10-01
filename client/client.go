@@ -74,14 +74,14 @@ func Execute() {
 	select {
 	case <-ch:
 		println("shutdown...")
-		if UserName != "" {
-			communicator.Send(&proto.Request{
-				From:    UserName,
-				Content: UserName + "下线了",
-				To:      "",
-				Time:    time.Now().Format("2006-01-02 15:04:05"),
-			})
-		}
+		//if UserName != "" {
+		//	communicator.Send(&proto.Request{
+		//		From:    UserName,
+		//		Content: UserName + "下线了",
+		//		To:      "",
+		//		Time:    time.Now().Format("2006-01-02 15:04:05"),
+		//	})
+		//}
 	}
 }
 

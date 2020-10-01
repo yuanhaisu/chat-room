@@ -4,6 +4,7 @@ import (
 	"chat_room/glog"
 	"github.com/spf13/viper"
 	"github.com/streadway/amqp"
+	"sync"
 )
 
 type MsgSendQueue interface {
@@ -17,6 +18,7 @@ type rabbitMq struct {
 	queue    amqp.Queue
 	consumer <-chan amqp.Delivery
 	Addr     string
+	sync.Mutex
 }
 
 func NewMsgQueue(addr string) (MsgSendQueue, error) {
@@ -42,11 +44,11 @@ func (rm *rabbitMq) connect() (e error) {
 	}
 	rm.queue, e = rm.channel.QueueDeclare(
 		viper.GetString("rabbit.chat_msg_queue_name"), // name
-		false, // durable
-		false, // delete when unused
-		false, // exclusive
-		false, // no-wait
-		nil,   // arguments
+		false,                                         // durable
+		false,                                         // delete when unused
+		false,                                         // exclusive
+		false,                                         // no-wait
+		nil,                                           // arguments
 	)
 	if e != nil {
 		glog.Error("Failed to declare a queue，", e)
@@ -56,7 +58,8 @@ func (rm *rabbitMq) connect() (e error) {
 }
 
 func (rm *rabbitMq) QueuedMsg() <-chan amqp.Delivery {
-
+	rm.Lock()
+	defer rm.Unlock()
 	if rm.consumer == nil {
 		rm.newConsume()
 	} else {
@@ -103,6 +106,6 @@ func (rm *rabbitMq) Publish(data []byte) error {
 		glog.Error("Failed to publish a message:", err)
 		return err
 	}
-	glog.Infoln("消息发布成功")
+	//glog.Infoln("消息发布成功")
 	return nil
 }
