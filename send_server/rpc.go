@@ -70,7 +70,7 @@ func (s *Server) SendUnreadMsg(usStream proto.Send_UserSendStreamServer, name st
 				return
 			}
 		}
-		s.doSend(usStream, &r)
+		doSend(s.redis,usStream, &r)
 	}
 }
 

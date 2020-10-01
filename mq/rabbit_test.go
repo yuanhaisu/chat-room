@@ -43,6 +43,6 @@ func BenchmarkRabbitMq_Publish(b *testing.B) {
 }
 
 func TestRabbitMq_QueuedMsg(t *testing.T) {
-	
+
 }
 

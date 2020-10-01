@@ -2,7 +2,6 @@ package common
 
 import (
 	"errors"
-	"log"
 	"strconv"
 )
 
@@ -14,12 +13,6 @@ const (
 	Aite
 	Quit
 )
-
-func FailOnError(err error, msg string) {
-	if err != nil {
-		log.Fatalf("%s: %s", msg, err)
-	}
-}
 
 func InterfaceSlice2String(params []interface{}, comma string) string {
 	var str string

@@ -3,13 +3,12 @@ package client
 import (
 	"bufio"
 	"chat_room/common"
-	"chat_room/glog"
 	"chat_room/proto"
 	"context"
 	"errors"
+	"flag"
 	"fmt"
 	"github.com/spf13/viper"
-	"google.golang.org/grpc"
 	"io"
 	"os"
 	"os/signal"
@@ -19,24 +18,79 @@ import (
 )
 
 var (
-	UserName    string
-	inputReader *bufio.Reader
+	UserName       string
+	inputReader    *bufio.Reader
+	confFilePath   = flag.String("confFilePath", "./", "define config file info")
+	confFileName   = flag.String("confFileName", "config", "define config file info")
+	confFileFormat = flag.String("confFileFormat", "yaml", "define config file info")
+	buildstamp     = ""
+	githash        = ""
 )
 
 func Execute() {
+	args := os.Args
+	if len(args) == 2 && (args[1] == "--version") {
+		fmt.Printf("Git Commit Hash: %s\n", githash)
+		fmt.Printf("UTC Build Time : %s\n", buildstamp)
+		return
+	}
+	ctx, cancel := context.WithCancel(context.Background())
 
-	ctx := context.Background()
-	initConfig()
-	//初始化grpc
+	flag.Parse()
+	InitConfig(*confFileName, *confFilePath, *confFileFormat)
+
+	inputReader = bufio.NewReader(os.Stdin)
+	joinMsg := WhatYourName()
+	//此处启动
+
 	sendAdddr := viper.GetString("send_grpc.ip") + ":" + viper.GetString("send_grpc.port")
 	recvAdddr := viper.GetString("recv_grpc.ip") + ":" + viper.GetString("recv_grpc.port")
 	communicator := NewCommunicator(sendAdddr, recvAdddr)
+	err := communicator.Launch(ctx, joinMsg)
+	if err != nil {
+		panic(err)
+	}
+	defer communicator.Close()
 
-	inputReader = bufio.NewReader(os.Stdin)
-	fmt.Println("Please input your name:")
-	var (
-		joinMsg *proto.Request
+	go InitShowWindow(ctx, communicator)
+	go ReadyForSend(ctx, communicator)
+	go InputWindow(communicator)
+
+	WaitShutdown(cancel)
+}
+
+func WaitShutdown(cancel context.CancelFunc) (ch chan os.Signal) {
+
+	ch = make(chan os.Signal, 1)
+	signal.Notify(ch,
+		// kill -SIGINT XXXX or Ctrl+c
+		os.Interrupt,
+		syscall.SIGINT, // register that too, it should be ok
+		// os.Kill  is equivalent with the syscall.Kill
+		os.Kill,
+		syscall.SIGKILL, // register that too, it should be ok
+		// kill -SIGTERM XXXX
+		syscall.SIGTERM,
 	)
+	select {
+	case <-ch:
+		println("shutdown...")
+		cancel()
+		time.Sleep(time.Second * 5)
+		//if UserName != "" {
+		//	communicator.Send(&proto.Request{
+		//		From:    UserName,
+		//		Content: UserName + "下线了",
+		//		To:      "",
+		//		Time:    time.Now().Format("2006-01-02 15:04:05"),
+		//	})
+		//}
+	}
+	return
+}
+
+func WhatYourName() (joinMsg *proto.Request) {
+	fmt.Println("Please input your name:")
 	for {
 		input, err := inputReader.ReadString('\n')
 		if err != nil {
@@ -51,38 +105,7 @@ func Execute() {
 			break
 		}
 	}
-	//此处启动
-	err := communicator.Launch(ctx, joinMsg)
-	if err != nil {
-		panic(err)
-	}
-	defer communicator.Close()
-
-	go InputWindow(communicator)
-
-	ch := make(chan os.Signal, 1)
-	signal.Notify(ch,
-		// kill -SIGINT XXXX or Ctrl+c
-		os.Interrupt,
-		syscall.SIGINT, // register that too, it should be ok
-		// os.Kill  is equivalent with the syscall.Kill
-		os.Kill,
-		syscall.SIGKILL, // register that too, it should be ok
-		// kill -SIGTERM XXXX
-		syscall.SIGTERM,
-	)
-	select {
-	case <-ch:
-		println("shutdown...")
-		//if UserName != "" {
-		//	communicator.Send(&proto.Request{
-		//		From:    UserName,
-		//		Content: UserName + "下线了",
-		//		To:      "",
-		//		Time:    time.Now().Format("2006-01-02 15:04:05"),
-		//	})
-		//}
-	}
+	return
 }
 
 func InputWindow(communicator Communicator) {
@@ -105,120 +128,48 @@ func InputWindow(communicator Communicator) {
 	}
 }
 
-type Communicator interface {
-	Launch(ctx context.Context, req *proto.Request) error
-	Send(*proto.Request)
-	Close()
-}
-
-func NewCommunicator(sendServerAddr, recvServerAddr string) Communicator {
-	return &grpcCommunicator{
-		SendServerAddr:  sendServerAddr,
-		RecvServerAddr:  recvServerAddr,
-		chatMsgSendChan: make(chan *proto.Request),
-	}
-}
-
-type grpcCommunicator struct {
-	SendServerAddr  string
-	RecvServerAddr  string
-	sendConn        *grpc.ClientConn
-	recvConn        *grpc.ClientConn
-	recvClient      proto.SendClient
-	sendClient      proto.RecvClient
-	recvStream      proto.Send_UserSendStreamClient
-	sendStream      proto.Recv_UserRecvStreamClient
-	chatMsgSendChan chan *proto.Request
-	Name            string
-}
-
-func (gc *grpcCommunicator) Close() {
-	gc.sendConn.Close()
-	gc.recvConn.Close()
-}
-
-func (gc *grpcCommunicator) Launch(c context.Context, req *proto.Request) (err error) {
-	defer func(err error) {
-		if err != nil {
-			if gc.sendConn != nil {
-				gc.sendConn.Close()
+func InitShowWindow(c context.Context, gc Communicator) {
+	for {
+		select {
+		case <-c.Done():
+			return
+		default:
+			data, e := gc.GetRecvStream().Recv()
+			if e != nil {
+				if e == io.EOF {
+					break
+				}
+				if e == common.ErrNameIsExisted {
+					continue
+				}
+				panic(e)
 			}
-			if gc.recvConn != nil {
-				gc.recvConn.Close()
+			//glog.Infoln("收到消息：", data)
+			if data.Action == common.Aite {
+				fmt.Println("来自" + data.From + "的个人消息：" + data.Content)
+			} else {
+				fmt.Println(data.From + "：" + data.Content)
 			}
 		}
-	}(err)
-	gc.sendConn, err = grpc.Dial(gc.RecvServerAddr, grpc.WithInsecure(), grpc.WithInsecure())
-	if err != nil {
-		return
 	}
-
-	gc.recvConn, err = grpc.Dial(gc.SendServerAddr, grpc.WithInsecure(), grpc.WithInsecure())
-	if err != nil {
-		return
-	}
-
-	gc.recvClient = proto.NewSendClient(gc.recvConn)
-	gc.sendClient = proto.NewRecvClient(gc.sendConn)
-
-	//接收服务端发过来的流
-	gc.recvStream, err = gc.recvClient.UserSendStream(c, req)
-	if err != nil {
-		return
-	}
-	//发送流给服务端
-	gc.sendStream, err = gc.sendClient.UserRecvStream(c)
-	if err != nil {
-		return
-	}
-
-	go func(c context.Context) {
-		for {
-			select {
-			case <-c.Done():
-				return
-			default:
-				data, e := gc.recvStream.Recv()
-				if e != nil {
-					if e == io.EOF {
-						break
-					}
-					if e == common.ErrNameIsExisted {
-						continue
-					}
-					panic(e)
-				}
-				glog.Infoln("收到消息：", data)
-				if data.Action == common.Aite {
-					fmt.Println("来自" + data.From + "的个人消息：" + data.Content)
-				} else {
-					fmt.Println(data.From + "：" + data.Content)
-				}
-			}
-		}
-	}(c)
-
-	go func(c context.Context) {
-		for {
-			select {
-			case req := <-gc.chatMsgSendChan:
-				if e := gc.sendStream.Send(req); e != nil {
-					if e == io.EOF {
-						fmt.Println("与房间连接已断开")
-						return
-					}
-					fmt.Println("发送失败：", e)
-				}
-			case <-c.Done():
-				return
-			}
-		}
-	}(c)
-	return
 }
 
-func (gc *grpcCommunicator) Send(req *proto.Request) {
-	gc.chatMsgSendChan <- req
+func ReadyForSend(c context.Context, gc Communicator) {
+	msgCh := gc.GetChatMsgSendChan()
+	for {
+		select {
+		case req := <-msgCh:
+			if e := gc.GetSendStream().Send(req); e != nil {
+				if e == io.EOF {
+					fmt.Println("与房间连接已断开")
+					return
+				}
+				fmt.Println("发送失败：", e)
+			}
+		case <-c.Done():
+			return
+		}
+	}
 }
 
 func NewMsgRequest(input string, isJoin ...bool) (req *proto.Request, err error) {
@@ -246,10 +197,10 @@ func NewMsgRequest(input string, isJoin ...bool) (req *proto.Request, err error)
 	return
 }
 
-func initConfig() {
-	viper.SetConfigName("config")
-	viper.SetConfigType("yaml")
-	viper.AddConfigPath("D:\\yuanhaisu\\goproject\\chat_room")
+func InitConfig(fileName, filePath, format string) {
+	viper.SetConfigName(fileName)
+	viper.SetConfigType(format)
+	viper.AddConfigPath(filePath)
 	err := viper.ReadInConfig() // Find and read the config file
 	if err != nil {             // Handle errors reading the config file
 		panic(fmt.Errorf("Fatal error config file: %s \n", err))
