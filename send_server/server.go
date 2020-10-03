@@ -78,7 +78,7 @@ func Execute() {
 func initConfig() {
 	viper.SetConfigName("config")
 	viper.SetConfigType("yaml")
-	viper.AddConfigPath("D:\\yuanhaisu\\goproject\\chat_room")
+	viper.AddConfigPath("./")
 	err := viper.ReadInConfig() // Find and read the config file
 	if err != nil {             // Handle errors reading the config file
 		panic(fmt.Errorf("Fatal error config file: %s \n", err))
