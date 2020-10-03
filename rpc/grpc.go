@@ -2,6 +2,7 @@ package rpc
 
 import (
 	"chat_room/proto"
+	"fmt"
 	"google.golang.org/grpc"
 	"net"
 	"os"
@@ -22,7 +23,7 @@ func NewGrpcRecvServer(addr string,srv proto.RecvServer){
 }
 
 
-func NewGrpcSendServer(addr string,srv proto.SendServer){
+func InitGrpcSendServer(addr string,srv proto.SendServer){
 	lis, err := net.Listen("tcp", addr)
 	if err != nil {
 		panic("failed to listen: " + err.Error())

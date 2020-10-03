@@ -52,9 +52,9 @@ func Execute() {
 	}
 	defer communicator.Close()
 
-	go InitShowWindow(ctx, communicator)
 	go ReadyForSend(ctx, communicator)
-	go InputWindow(communicator)
+	go InputWindow(ctx, communicator)
+	go InitShowWindow(ctx, communicator)
 
 	WaitShutdown(cancel)
 }
@@ -108,23 +108,29 @@ func WhatYourName() (joinMsg *proto.Request) {
 	return
 }
 
-func InputWindow(communicator Communicator) {
+func InputWindow(ctx context.Context, communicator Communicator) {
 	for {
-		input, err := inputReader.ReadString('\n')
-		if err != nil {
-			fmt.Printf("An error occurred :%s\n", err)
-			continue
+		select {
+		case <-ctx.Done():
+			fmt.Println("input window closed!")
+			return
+		default:
+			input, err := inputReader.ReadString('\n')
+			if err != nil {
+				fmt.Printf("An error occurred :%s\n", err)
+				continue
+			}
+			input = input[:len(input)-2]
+			if input == "" {
+				continue
+			}
+			msg, err := NewMsgRequest(input)
+			if err != nil {
+				fmt.Println(err)
+				continue
+			}
+			communicator.Send(msg)
 		}
-		input = input[:len(input)-2]
-		if input == "" {
-			continue
-		}
-		msg, err := NewMsgRequest(input)
-		if err != nil {
-			fmt.Println(err)
-			continue
-		}
-		communicator.Send(msg)
 	}
 }
 
@@ -132,6 +138,7 @@ func InitShowWindow(c context.Context, gc Communicator) {
 	for {
 		select {
 		case <-c.Done():
+			fmt.Println("show window closed!")
 			return
 		default:
 			data, e := gc.GetRecvStream().Recv()
@@ -167,6 +174,7 @@ func ReadyForSend(c context.Context, gc Communicator) {
 				fmt.Println("发送失败：", e)
 			}
 		case <-c.Done():
+			fmt.Println("send stream closed!")
 			return
 		}
 	}

@@ -37,7 +37,7 @@ func Execute() {
 	go mc.Delivery(ctx)
 
 	addr := viper.GetString("send_grpc.ip") + ":" + viper.GetString("send_grpc.port")
-	rpc.NewGrpcSendServer(addr,NewRpcServer(mc, redis.RedisSource))
+	rpc.InitGrpcSendServer(addr,NewRpcServer(mc, redis.RedisSource))
 }
 
 func initConfig() {

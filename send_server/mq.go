@@ -60,7 +60,7 @@ func (mc *msgCenter) Delivery(ctx context.Context) {
 			if !isClose {
 				msgs = mc.Mq.QueuedMsg()
 				glog.Error("重连消费者")
-				return
+				continue
 			}
 			//glog.Infoln("收到消息队列内容：", string(msg.Body))
 			req := &proto.Request{}
@@ -92,8 +92,11 @@ func (mc *msgCenter) Delivery(ctx context.Context) {
 				//glog.Infoln("写入消息到发送通道")
 				return true
 			})
-			//用户下线，收到关闭指定通道的通知
+			if e:=msg.Ack(false);e!=nil{
+				glog.Error("回应失败，失败信息：",e)
+			}
 		case name := <-mc.offlineNotify:
+			//用户下线，收到关闭指定通道的通知
 			res, ok := mc.onlineMsgChan.Load(name)
 			if ok {
 				close(res.(chan *proto.Request))

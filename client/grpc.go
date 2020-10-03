@@ -92,7 +92,7 @@ func (gc *grpcCommunicator) connectRecvServer(c context.Context, req *proto.Requ
 			}
 		}
 	}()
-	gc.recvConn, err = grpc.Dial(gc.RecvServerAddr, grpc.WithInsecure(), grpc.WithInsecure())
+	gc.recvConn, err = grpc.Dial(gc.RecvServerAddr, grpc.WithInsecure())
 	if err != nil {
 		return
 	}
