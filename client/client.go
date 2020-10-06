@@ -9,6 +9,8 @@ import (
 	"flag"
 	"fmt"
 	"github.com/spf13/viper"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"io"
 	"os"
 	"os/signal"
@@ -43,8 +45,8 @@ func Execute() {
 	}
 	defer communicator.Close()
 
-	go ReadyForSend(ctx, communicator)
 	go InputWindow(ctx, communicator)
+	go ReadyForSend(ctx, communicator)
 	go InitShowWindow(ctx, communicator)
 
 	WaitShutdown(cancel)
@@ -131,9 +133,6 @@ func InitShowWindow(c context.Context, gc Communicator) {
 		case <-c.Done():
 			fmt.Println("show window closed!")
 			return
-		case <-gc.GetRecvStream().Context().Done():
-			fmt.Println("recv stream closed by server!")
-			return
 		default:
 			data, e := gc.GetRecvStream().Recv()
 			if e != nil {
@@ -142,6 +141,11 @@ func InitShowWindow(c context.Context, gc Communicator) {
 				}
 				if e == common.ErrNameIsExisted {
 					continue
+				}
+				cancelErr := status.Error(codes.Canceled, context.Canceled.Error())
+				if e.Error() == cancelErr.Error() {
+					fmt.Println("recv stream context canceled by server!")
+					return
 				}
 				panic(e)
 			}
