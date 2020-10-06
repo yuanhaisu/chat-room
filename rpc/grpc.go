@@ -2,7 +2,7 @@ package rpc
 
 import (
 	"chat_room/proto"
-	"fmt"
+	"context"
 	"google.golang.org/grpc"
 	"net"
 	"os"
@@ -10,7 +10,7 @@ import (
 	"syscall"
 )
 
-func NewGrpcRecvServer(addr string,srv proto.RecvServer){
+func NewGrpcRecvServer(cancel context.CancelFunc, addr string, srv proto.RecvServer) {
 	lis, err := net.Listen("tcp", addr)
 	if err != nil {
 		panic("failed to listen: " + err.Error())
@@ -18,12 +18,11 @@ func NewGrpcRecvServer(addr string,srv proto.RecvServer){
 	s := grpc.NewServer()
 	proto.RegisterRecvServer(s, srv)
 
-	server(lis,s)
+	server(cancel, lis, s)
 	return
 }
 
-
-func InitGrpcSendServer(addr string,srv proto.SendServer){
+func InitGrpcSendServer(cancel context.CancelFunc, addr string, srv proto.SendServer) {
 	lis, err := net.Listen("tcp", addr)
 	if err != nil {
 		panic("failed to listen: " + err.Error())
@@ -31,11 +30,11 @@ func InitGrpcSendServer(addr string,srv proto.SendServer){
 	s := grpc.NewServer()
 	proto.RegisterSendServer(s, srv)
 
-	server(lis,s)
+	server(cancel, lis, s)
 	return
 }
 
-func server(lis net.Listener,s *grpc.Server){
+func server(cancel context.CancelFunc, lis net.Listener, s *grpc.Server) {
 
 	go func() {
 		ch := make(chan os.Signal, 1)
@@ -51,6 +50,7 @@ func server(lis net.Listener,s *grpc.Server){
 		)
 		select {
 		case <-ch:
+			cancel()
 			println("shutdown...")
 			s.GracefulStop()
 			lis.Close()
@@ -58,6 +58,6 @@ func server(lis net.Listener,s *grpc.Server){
 	}()
 
 	if err := s.Serve(lis); err != nil {
-		panic("failed to serve: "+ err.Error())
+		panic("failed to serve: " + err.Error())
 	}
 }

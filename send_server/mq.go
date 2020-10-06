@@ -8,6 +8,7 @@ import (
 	"chat_room/redis"
 	"context"
 	"encoding/json"
+	"github.com/streadway/amqp"
 	"sync"
 	"time"
 )
@@ -50,16 +51,22 @@ func (mc *msgCenter) Subscribe(name string) (ch <-chan *proto.Request, err error
 }
 
 func (mc *msgCenter) Delivery(ctx context.Context) {
-	msgs := mc.Mq.QueuedMsg()
+	var (
+		msg     amqp.Delivery
+		msgs    <-chan amqp.Delivery
+		isClose bool
+	)
 	for {
+		if !isClose {
+			msgs = mc.Mq.QueuedMsg()
+		}
 		select {
 		case <-ctx.Done():
 			glog.Infoln("consumer is closing...")
+			mc.Mq.Close()
 			return
-		case msg, isClose := <-msgs:
+		case msg, isClose = <-msgs:
 			if !isClose {
-				msgs = mc.Mq.QueuedMsg()
-				glog.Error("重连消费者")
 				continue
 			}
 			//glog.Infoln("收到消息队列内容：", string(msg.Body))
@@ -92,8 +99,8 @@ func (mc *msgCenter) Delivery(ctx context.Context) {
 				//glog.Infoln("写入消息到发送通道")
 				return true
 			})
-			if e:=msg.Ack(false);e!=nil{
-				glog.Error("回应失败，失败信息：",e)
+			if e := msg.Ack(false); e != nil {
+				glog.Error("回应失败，失败信息：", e)
 			}
 		case name := <-mc.offlineNotify:
 			//用户下线，收到关闭指定通道的通知

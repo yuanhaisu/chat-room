@@ -3,6 +3,7 @@ package redis
 import (
 	"chat_room/common"
 	"chat_room/glog"
+	"context"
 	"github.com/garyburd/redigo/redis"
 	"time"
 )
@@ -36,12 +37,13 @@ func newPool(server, password string) *redis.Pool {
 }
 
 type Redis struct {
+	ctx  context.Context
 	pool *redis.Pool
 }
 
 var RedisSource Redis
 
-func InitRedis(host, port, passwd string) {
+func InitRedis(ctx context.Context, host, port, passwd string) {
 	RedisSource.pool = newPool(host+":"+port, passwd)
 	glog.Infoln("连接池初始化成功")
 }
@@ -55,4 +57,16 @@ func (r *Redis) Do(commandName string, args ...interface{}) (reply interface{}, 
 		}
 	}()
 	return conn.Do(commandName, args...)
+}
+
+func (r *Redis) Close() {
+	for {
+		select {
+		case <-r.ctx.Done():
+			if e := r.pool.Close(); e != nil {
+				glog.Error("redis - Pool Close Failed: ", e)
+			}
+		}
+	}
+
 }

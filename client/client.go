@@ -161,6 +161,10 @@ func InitShowWindow(c context.Context, gc Communicator) {
 	}
 }
 
+func MsgFormat(req proto.Request) {
+
+}
+
 func ReadyForSend(c context.Context, gc Communicator) {
 	msgCh := gc.GetChatMsgSendChan()
 	for {

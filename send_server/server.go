@@ -12,12 +12,12 @@ import (
 
 func Execute() {
 	flag.Parse()
-	ctx, cancle := context.WithCancel(context.Background())
-	defer cancle()
+	ctx, cancel := context.WithCancel(context.Background())
 
 	initConfig()
 
 	redis.InitRedis(
+		ctx,
 		viper.GetString("redis.host"),
 		viper.GetString("redis.port"),
 		viper.GetString("redis.passwd"),
@@ -28,16 +28,17 @@ func Execute() {
 		viper.GetString("rabbit.password") + "@" +
 		viper.GetString("rabbit.ip") + ":" +
 		viper.GetString("rabbit.port")
-	rm, e := mq.NewMsgQueue(rabbitUrl)
+	rm, e := mq.InitMsgQueue(ctx, rabbitUrl)
 	if e != nil {
 		panic(e)
 	}
+	defer rm.Close()
 	mc := NewMsgCenter(rm)
 
 	go mc.Delivery(ctx)
 
 	addr := viper.GetString("send_grpc.ip") + ":" + viper.GetString("send_grpc.port")
-	rpc.InitGrpcSendServer(addr,NewRpcServer(mc, redis.RedisSource))
+	rpc.InitGrpcSendServer(cancel, addr, NewRpcServer(mc, redis.RedisSource))
 }
 
 func initConfig() {

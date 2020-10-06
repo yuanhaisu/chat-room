@@ -4,6 +4,7 @@ import (
 	"chat_room/mq"
 	"chat_room/redis"
 	"chat_room/rpc"
+	"context"
 	"flag"
 	"fmt"
 	"github.com/spf13/viper"
@@ -11,10 +12,12 @@ import (
 
 func Execute() {
 	flag.Parse()
+	ctx, cancle := context.WithCancel(context.Background())
 
 	initConfig()
 
 	redis.InitRedis(
+		ctx,
 		viper.GetString("redis.host"),
 		viper.GetString("redis.port"),
 		viper.GetString("redis.passwd"),
@@ -22,13 +25,13 @@ func Execute() {
 
 	rabbitUrl := viper.GetString("rabbit.protocol") + "://" + viper.GetString("rabbit.username") + ":" + viper.GetString("rabbit.password") + "@" + viper.GetString("rabbit.ip") + ":" + viper.GetString("rabbit.port")
 
-	mc, e := mq.NewMsgQueue(rabbitUrl)
+	mc, e := mq.InitMsgQueue(ctx, rabbitUrl)
 	if e != nil {
 		panic(e)
 	}
 
 	addr := viper.GetString("recv_grpc.ip") + ":" + viper.GetString("recv_grpc.port")
-	rpc.NewGrpcRecvServer(addr,NewRpcServer(mc))
+	rpc.NewGrpcRecvServer(cancle, addr, NewRpcServer(mc))
 }
 
 func initConfig() {
