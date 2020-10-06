@@ -46,7 +46,7 @@ var RedisSource Redis
 
 func InitRedis(ctx context.Context, host, port, passwd string) {
 	RedisSource.pool = newPool(host+":"+port, passwd)
-	if _, e := RedisSource.Do("keys xxx"); e != nil {
+	if _, e := RedisSource.Do("keys", "xxx"); e != nil {
 		panic(e)
 	}
 	glog.Infoln("连接池初始化成功")
