@@ -16,13 +16,14 @@ func newPool(server, password string) *redis.Pool {
 		IdleTimeout: 240 * time.Second,
 		Dial: func() (redis.Conn, error) {
 			c, err := redis.Dial("tcp", server)
-
 			if err != nil {
 				return nil, err
 			}
-			if _, err := c.Do("AUTH", password); err != nil {
-				c.Close()
-				return nil, err
+			if password != "" {
+				if _, err := c.Do("AUTH", password); err != nil {
+					c.Close()
+					return nil, err
+				}
 			}
 			return c, err
 		},
@@ -45,6 +46,9 @@ var RedisSource Redis
 
 func InitRedis(ctx context.Context, host, port, passwd string) {
 	RedisSource.pool = newPool(host+":"+port, passwd)
+	if _, e := RedisSource.Do("keys xxx"); e != nil {
+		panic(e)
+	}
 	glog.Infoln("连接池初始化成功")
 }
 

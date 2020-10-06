@@ -1,12 +1,12 @@
 redis:
   host: localhost
   port: 6379
-  passwd: spacej.tech
+  passwd:
 rabbit:
   protocol: amqp
   username: guest
   password: guest
-  ip: 114.115.222.149
+  ip: localhost
   port: 5672
   queue_name: chat_msg
   chat_msg_queue_name: chat-room2

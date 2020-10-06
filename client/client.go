@@ -88,7 +88,7 @@ func WhatYourName() (joinMsg *proto.Request) {
 			fmt.Printf("An error occurred :%s\n", err)
 			os.Exit(1)
 		} else {
-			UserName = input[:len(input)-2]
+			UserName = input[:len(input)-1]
 			joinMsg, err = NewMsgRequest(UserName, true)
 			if err != nil {
 				continue
@@ -111,7 +111,7 @@ func InputWindow(ctx context.Context, communicator Communicator) {
 				fmt.Printf("An error occurred :%s\n", err)
 				continue
 			}
-			input = input[:len(input)-2]
+			input = input[:len(input)-1]
 			if input == "" {
 				continue
 			}
