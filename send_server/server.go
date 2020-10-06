@@ -1,9 +1,9 @@
 package send_server
 
 import (
-	"chat_room/mq"
-	"chat_room/redis"
-	"chat_room/rpc"
+	"chat-room/mq"
+	"chat-room/redis"
+	"chat-room/rpc"
 	"context"
 	"flag"
 	"fmt"

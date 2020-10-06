@@ -1,11 +1,11 @@
 package send_server
 
 import (
-	"chat_room/common"
-	"chat_room/glog"
-	"chat_room/mq"
-	"chat_room/proto"
-	"chat_room/redis"
+	"chat-room/common"
+	"chat-room/glog"
+	"chat-room/mq"
+	"chat-room/proto"
+	"chat-room/redis"
 	"context"
 	"encoding/json"
 	"github.com/streadway/amqp"

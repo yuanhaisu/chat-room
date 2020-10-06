@@ -1,7 +1,7 @@
 package mq
 
 import (
-	"chat_room/glog"
+	"chat-room/glog"
 	"context"
 	"github.com/spf13/viper"
 	"github.com/streadway/amqp"

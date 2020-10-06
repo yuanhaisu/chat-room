@@ -1,7 +1,7 @@
 package client
 
 import (
-	"chat_room/proto"
+	"chat-room/proto"
 	"context"
 	"fmt"
 	"github.com/spf13/viper"
@@ -54,7 +54,7 @@ func (tc *testCommunicator) Launch(ctx context.Context, req *proto.Request) erro
 func (tc *testCommunicator) Send(req *proto.Request) {
 	fmt.Println("body")
 }
-func (tc *testCommunicator) Close()              {}
+func (tc *testCommunicator) Close() {}
 func (tc *testCommunicator) GetRecvStream() proto.Send_UserSendStreamClient {
 	return &sendUserSendStreamClient{
 		ch: tc.sendUserSendStream,
@@ -108,7 +108,7 @@ func TestInitShowWindow(t *testing.T) {
 	ctx := context.Background()
 	ch := make(chan *proto.Request)
 	sendUserSendStreamCh := make(chan struct{})
-	gc := NewTestCommunicator(ch,sendUserSendStreamCh)
+	gc := NewTestCommunicator(ch, sendUserSendStreamCh)
 	go InitShowWindow(ctx, gc)
 	for i := 0; i < 5; i++ {
 		sendUserSendStreamCh <- struct{}{}
@@ -119,9 +119,9 @@ func TestReadyForSend(t *testing.T) {
 	ctx := context.Background()
 	ch := make(chan *proto.Request)
 	sendUserSendStreamCh := make(chan struct{})
-	gc := NewTestCommunicator(ch,sendUserSendStreamCh)
-	go ReadyForSend(ctx,gc)
-	for i:=0;i<5;i++{
+	gc := NewTestCommunicator(ch, sendUserSendStreamCh)
+	go ReadyForSend(ctx, gc)
+	for i := 0; i < 5; i++ {
 		ch <- &proto.Request{
 			From:    "发送者",
 			Content: "消息内容",
@@ -136,9 +136,9 @@ func BenchmarkReadyForSend(b *testing.B) {
 	ctx := context.Background()
 	ch := make(chan *proto.Request)
 	sendUserSendStreamCh := make(chan struct{})
-	gc := NewTestCommunicator(ch,sendUserSendStreamCh)
-	go ReadyForSend(ctx,gc)
-	for i:=0;i<b.N;i++{
+	gc := NewTestCommunicator(ch, sendUserSendStreamCh)
+	go ReadyForSend(ctx, gc)
+	for i := 0; i < b.N; i++ {
 		ch <- &proto.Request{
 			From:    "发送者",
 			Content: "消息内容",

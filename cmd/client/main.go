@@ -1,6 +1,6 @@
 package main
 
-import "chat_room/client"
+import "chat-room/client"
 
 func main() {
 	client.Execute()

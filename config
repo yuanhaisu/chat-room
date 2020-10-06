@@ -1,5 +1,5 @@
 redis:
-  host: dev.spacej.tech
+  host: localhost
   port: 6379
   passwd: spacej.tech
 rabbit:
@@ -9,7 +9,7 @@ rabbit:
   ip: 114.115.222.149
   port: 5672
   queue_name: chat_msg
-  chat_msg_queue_name: chat_room2
+  chat_msg_queue_name: chat-room2
 recv_grpc:
   port: 50051
   ip: localhost

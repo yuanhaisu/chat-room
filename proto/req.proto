@@ -15,7 +15,7 @@
 syntax = "proto3";
 package req;
 
-option go_package = "chat_room/proto";
+option go_package = "chat-room/proto";
 
 // The greeting service definition.
 message Request {

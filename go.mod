@@ -1,4 +1,4 @@
-module chat_room
+module chat-room
 
 go 1.14
 

@@ -16,7 +16,7 @@ syntax = "proto3";
 import "req.proto";
 package recv;
 
-option go_package = "chat_room/proto";
+option go_package = "chat-room/proto";
 
 // The greeting service definition.
 service Recv {

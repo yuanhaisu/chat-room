@@ -1,8 +1,8 @@
 package redis
 
 import (
-	"chat_room/common"
-	"chat_room/glog"
+	"chat-room/common"
+	"chat-room/glog"
 	"context"
 	"github.com/garyburd/redigo/redis"
 	"time"

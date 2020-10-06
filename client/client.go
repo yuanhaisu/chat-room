@@ -2,8 +2,8 @@ package client
 
 import (
 	"bufio"
-	"chat_room/common"
-	"chat_room/proto"
+	"chat-room/common"
+	"chat-room/proto"
 	"context"
 	"errors"
 	"flag"

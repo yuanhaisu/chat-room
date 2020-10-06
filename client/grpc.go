@@ -1,7 +1,7 @@
 package client
 
 import (
-	"chat_room/proto"
+	"chat-room/proto"
 	"context"
 	"google.golang.org/grpc"
 )

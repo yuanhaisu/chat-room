@@ -1,7 +1,7 @@
 package main
 
 import (
-	"chat_room/send_server"
+	"chat-room/send_server"
 )
 
 func main() {

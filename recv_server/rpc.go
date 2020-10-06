@@ -1,9 +1,9 @@
 package recv_server
 
 import (
-	"chat_room/glog"
-	"chat_room/mq"
-	"chat_room/proto"
+	"chat-room/glog"
+	"chat-room/mq"
+	"chat-room/proto"
 	"encoding/json"
 	"io"
 )

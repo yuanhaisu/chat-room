@@ -1,10 +1,10 @@
 package send_server
 
 import (
-	"chat_room/common"
-	"chat_room/glog"
-	"chat_room/proto"
-	"chat_room/redis"
+	"chat-room/common"
+	"chat-room/glog"
+	"chat-room/proto"
+	"chat-room/redis"
 	"encoding/json"
 	"time"
 )
@@ -40,7 +40,7 @@ func (s *Server) UserSendStream(req *proto.Request, usStream proto.Send_UserSend
 		select {
 		case req := <-ch:
 			//glog.Infof("从发送通道读取到消息：%+v", req)
-			doSend(s.redis,usStream, req)
+			doSend(s.redis, usStream, req)
 		case <-usStream.Context().Done():
 			//fmt.Println("收到" + req.From + "正常下线")
 			req.Action = common.Quit
@@ -70,11 +70,11 @@ func (s *Server) SendUnreadMsg(usStream proto.Send_UserSendStreamServer, name st
 				return
 			}
 		}
-		doSend(s.redis,usStream, &r)
+		doSend(s.redis, usStream, &r)
 	}
 }
 
-func doSend(redisConn redis.Redis,usStream proto.Send_UserSendStreamServer, req *proto.Request) {
+func doSend(redisConn redis.Redis, usStream proto.Send_UserSendStreamServer, req *proto.Request) {
 	if e := usStream.Send(req); e != nil {
 		if req.Action == common.Aite {
 			b, _ := json.Marshal(req)

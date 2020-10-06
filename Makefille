@@ -1,18 +1,27 @@
-run:
-	./recv_server
-	./send_server
-	./client1
-	./client2
+RECV_SERVER=send-server
+SEND_SERVER=send-server
+CLIENT1=client1
+CLIENT2=client2
+
+OS := $(if $(GOOS),$(GOOS),$(shell go env GOOS))
+ARCH := $(if $(GOARCH),$(GOARCH),$(shell go env GOARCH))
+
+run: recvServer sendServer client1 client2
+	./$(RECV_SERVER)
+	./$(SEND_SERVER)
+	./$(CLIENT1)
+	./$(CLIENT2)
 
 build:
-	export GO111MODULE=on
-	export GOPROXY=https://goproxy.cn
-	git mod tidy
-	protoc --go_out=plugins=grpc:../ proto/*.proto
-	GOOS=linux  GOARCH=amd64 go build -x -o client1 chat_room/cmd/client
-	GOOS=linux  GOARCH=amd64 go build -x -o client2 chat_room/cmd/client
-	GOOS=linux  GOARCH=amd64 go build -x -o recv_server chat_room/cmd/recv_server
-	GOOS=linux  GOARCH=amd64 go build -x -o send_server chat_room/cmd/send_server
+    go clean
+    @export GO111MODULE=on
+    @echo "building for $(OS)/$(ARCH)"
+	GOOS=$(OS)  GOARCH=$(ARCH) go build -x -o $(CLIENT1)-$(ARCH) chat-room/cmd/client
+	GOOS=$(OS)  GOARCH=$(ARCH) go build -x -o $(CLIENT2)-$(ARCH) chat-room/cmd/client
+	GOOS=$(OS)  GOARCH=$(ARCH) go build -x -o $(RECV_SERVER)-$(ARCH) chat-room/cmd/recv_server
+	GOOS=$(OS)  GOARCH=$(ARCH) go build -x -o $(SEND_SERVER)-$(ARCH) chat-room/cmd/send_server
+
+
 
 prepare:
 	yum install -y gcc
@@ -23,12 +32,16 @@ prepare:
 	mkdir -p /usr/local/app/redis /usr/local/app/redis/data
 	docker run -p 6379:6379 -v /usr/local/app/redis/data:/data -v /usr/local/app/redis/redis.conf:/etc/redis/redis.conf --name redis -d redis redis-server /etc/redis/redis.conf
 	docker pull rabbitmq
-	mkdir -p /usr/local/app/rabbitmq/conf /usr/local/app/rabbitmq/data
-	docker run -d --name rabbitmq -p 5672:5672 -p 15672:15672  -v /usr/local/app/rabbitmq/conf:/etc/rabbitmq -v /usr/local/app/rabbitmq/data:/var/lib/rabbitmq  rabbitmq:3-management
+	mkdir -p /usr/local/app/rabbitmq
+	docker run -d --name rabbitmq -p 5672:5672 -p 15672:15672 -v /usr/local/app/rabbitmq/:/var/lib/rabbitmq  rabbitmq:latest
 
+    #curl -LO https://github.com/protocolbuffers/protobuf/releases/download/v3.13.0/protoc-3.13.0-linux-x86_64.zip
+    #unzip protoc-3.13.0-linux-x86_64.zip -d $HOME/.local
+    #export PATH="$PATH:$HOME/.local/bin"
+    #go get github.com/golang/protobuf/protoc-gen-go
+    #go get google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.0
+    #export PATH="$PATH:$(go env GOPATH)/bin"
 test:
-	export GO111MODULE=on
-	export GOPROXY=https://goproxy.cn
 	go test ./client
 	go test ./send_server
 	go test ./recv_server
