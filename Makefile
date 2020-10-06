@@ -2,7 +2,6 @@ RECV_SERVER=recv-server
 SEND_SERVER=send-server
 CLIENT1=client1
 
-
 OS := $(if $(GOOS),$(GOOS),$(shell go env GOOS))
 ARCH := $(if $(GOARCH),$(GOARCH),$(shell go env GOARCH))
 FLAG := "-X main.buildstamp=`date -u '+%Y-%m-%d_%I:%M:%S%p'` -X main.githash=`git rev-parse HEAD`"
@@ -13,9 +12,9 @@ run: $(RECV_SERVER)-$(ARCH)-$(OS) $(SEND_SERVER)-$(ARCH)-$(OS) $(CLIENT1)-$(ARCH
 	./$(CLIENT1)-$(ARCH)-$(OS)
 
 build:
-    go clean
-    @export GO111MODULE=on
-    @echo "building for $(OS)/$(ARCH)"
+	@go clean
+	@export GO111MODULE=on
+	@echo "building for $(OS)/$(ARCH)"
 	GOOS=$(OS)  GOARCH=$(ARCH) go build -ldflags $(FLAG) -x -o $(CLIENT1)-$(ARCH)-$(OS) chat-room/cmd/client
 	GOOS=$(OS)  GOARCH=$(ARCH) go build -ldflags $(FLAG) -x -o $(RECV_SERVER)-$(ARCH)-$(OS) chat-room/cmd/recv_server
 	GOOS=$(OS)  GOARCH=$(ARCH) go build -ldflags $(FLAG) -x -o $(SEND_SERVER)-$(ARCH)-$(OS) chat-room/cmd/send_server
