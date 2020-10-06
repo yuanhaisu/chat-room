@@ -10,11 +10,19 @@ import (
 	"github.com/spf13/viper"
 )
 
+var (
+	confFilePath   = flag.String("confFilePath", "./", "define config file info")
+	confFileName   = flag.String("confFileName", "config", "define config file info")
+	confFileFormat = flag.String("confFileFormat", "yaml", "define config file info")
+	buildstamp     = ""
+	githash        = ""
+)
+
 func Execute() {
-	flag.Parse()
+
 	ctx, cancle := context.WithCancel(context.Background())
 
-	initConfig()
+	InitConfig(*confFileName, *confFilePath, *confFileFormat)
 
 	redis.InitRedis(
 		ctx,
@@ -34,10 +42,10 @@ func Execute() {
 	rpc.NewGrpcRecvServer(cancle, addr, NewRpcServer(mc))
 }
 
-func initConfig() {
-	viper.SetConfigName("config")
-	viper.SetConfigType("yaml")
-	viper.AddConfigPath("./")
+func InitConfig(fileName, filePath, format string) {
+	viper.SetConfigName(fileName)
+	viper.SetConfigType(format)
+	viper.AddConfigPath(filePath)
 	err := viper.ReadInConfig() // Find and read the config file
 	if err != nil {             // Handle errors reading the config file
 		panic(fmt.Errorf("Fatal error config file: %s \n", err))

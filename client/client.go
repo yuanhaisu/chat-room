@@ -23,20 +23,11 @@ var (
 	confFilePath   = flag.String("confFilePath", "./", "define config file info")
 	confFileName   = flag.String("confFileName", "config", "define config file info")
 	confFileFormat = flag.String("confFileFormat", "yaml", "define config file info")
-	buildstamp     = ""
-	githash        = ""
 )
 
 func Execute() {
-	args := os.Args
-	if len(args) == 2 && (args[1] == "--version") {
-		fmt.Printf("Git Commit Hash: %s\n", githash)
-		fmt.Printf("UTC Build Time : %s\n", buildstamp)
-		return
-	}
 	ctx, cancel := context.WithCancel(context.Background())
 
-	flag.Parse()
 	InitConfig(*confFileName, *confFilePath, *confFileFormat)
 
 	inputReader = bufio.NewReader(os.Stdin)

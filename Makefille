@@ -1,26 +1,24 @@
-RECV_SERVER=send-server
+RECV_SERVER=recv-server
 SEND_SERVER=send-server
 CLIENT1=client1
-CLIENT2=client2
+
 
 OS := $(if $(GOOS),$(GOOS),$(shell go env GOOS))
 ARCH := $(if $(GOARCH),$(GOARCH),$(shell go env GOARCH))
+FLAG := "-X main.buildstamp=`date -u '+%Y-%m-%d_%I:%M:%S%p'` -X main.githash=`git rev-parse HEAD`"
 
-run: recvServer sendServer client1 client2
-	./$(RECV_SERVER)
-	./$(SEND_SERVER)
-	./$(CLIENT1)
-	./$(CLIENT2)
+run: $(RECV_SERVER)-$(ARCH)-$(OS) $(SEND_SERVER)-$(ARCH)-$(OS) $(CLIENT1)-$(ARCH)-$(OS)
+	nohup ./$(SEND_SERVER)-$(ARCH)-$(OS) > $(SEND_SERVER).log 2>&1 &
+	nohup ./$(RECV_SERVER)-$(ARCH)-$(OS) > $(RECV_SERVER).log 2>&1 &
+	./$(CLIENT1)-$(ARCH)-$(OS)
 
 build:
     go clean
     @export GO111MODULE=on
     @echo "building for $(OS)/$(ARCH)"
-	GOOS=$(OS)  GOARCH=$(ARCH) go build -x -o $(CLIENT1)-$(ARCH) chat-room/cmd/client
-	GOOS=$(OS)  GOARCH=$(ARCH) go build -x -o $(CLIENT2)-$(ARCH) chat-room/cmd/client
-	GOOS=$(OS)  GOARCH=$(ARCH) go build -x -o $(RECV_SERVER)-$(ARCH) chat-room/cmd/recv_server
-	GOOS=$(OS)  GOARCH=$(ARCH) go build -x -o $(SEND_SERVER)-$(ARCH) chat-room/cmd/send_server
-
+	GOOS=$(OS)  GOARCH=$(ARCH) go build -ldflags $(FLAG) -x -o $(CLIENT1)-$(ARCH)-$(OS) chat-room/cmd/client
+	GOOS=$(OS)  GOARCH=$(ARCH) go build -ldflags $(FLAG) -x -o $(RECV_SERVER)-$(ARCH)-$(OS) chat-room/cmd/recv_server
+	GOOS=$(OS)  GOARCH=$(ARCH) go build -ldflags $(FLAG) -x -o $(SEND_SERVER)-$(ARCH)-$(OS) chat-room/cmd/send_server
 
 
 prepare:
