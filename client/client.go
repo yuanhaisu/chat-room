@@ -152,17 +152,21 @@ func InitShowWindow(c context.Context, gc Communicator) {
 				panic(e)
 			}
 			//glog.Infoln("收到消息：", data)
-			if data.Action == common.Aite {
-				fmt.Println("来自" + data.From + "的个人消息：" + data.Content)
-			} else {
-				fmt.Println(data.From + "：" + data.Content)
-			}
+			MsgFormat(data)
 		}
 	}
 }
 
-func MsgFormat(req proto.Request) {
-
+func MsgFormat(data *proto.Request) {
+	if data.Action == common.Aite {
+		if data.From == UserName {
+			fmt.Println(data.Time + ": 发送至" + data.From + "的个人消息：" + data.Content)
+		} else {
+			fmt.Println(data.Time + ": 来自" + data.From + "的个人消息：" + data.Content)
+		}
+	} else {
+		fmt.Println(data.Time + ": " + data.From + "：" + data.Content)
+	}
 }
 
 func ReadyForSend(c context.Context, gc Communicator) {
