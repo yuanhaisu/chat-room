@@ -131,6 +131,9 @@ func InitShowWindow(c context.Context, gc Communicator) {
 		case <-c.Done():
 			fmt.Println("show window closed!")
 			return
+		case <-gc.GetRecvStream().Context().Done():
+			fmt.Println("recv stream closed by server!")
+			return
 		default:
 			data, e := gc.GetRecvStream().Recv()
 			if e != nil {
