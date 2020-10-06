@@ -56,7 +56,7 @@ func (s *Server) SendUnreadMsg(usStream proto.Send_UserSendStreamServer, name st
 	for {
 		raw, e := s.redis.Do("rpop", name)
 		if e != nil {
-			glog.Errorf("获取未读消息失败，失败信息：%v", e, "，当前用户信息：%+v", name)
+			glog.Errorf("获取未读消息失败，失败信息：%v，当前用户信息：%+v", e, name)
 			return
 		}
 		if raw == nil {
@@ -83,7 +83,7 @@ func doSend(redisConn redis.Redis, usStream proto.Send_UserSendStreamServer, req
 				return
 			}
 		}
-		glog.Errorf("发送消息给用户失败，失败信息：%v", e, "，消息内容：%+v", req)
+		glog.Errorf("发送消息给用户失败，失败信息：%v，消息内容：%+v", e, req)
 		return
 	}
 	//glog.Infoln("完成消息发送给用户")
